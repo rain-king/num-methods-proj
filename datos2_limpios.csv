@@ -1,0 +1,52 @@
+genero,edad,origen,residencia,trabajo,sueldo_quincenal,agua
+Mujer,22,Urbano,Urbano,No trabaja,NA,5
+Hombre,22,Rural,Urbano,No trabaja,14000,8
+Hombre,22,Urbano,Urbano,Trabaja,1800,4
+Mujer,66,Urbano,Urbano,Trabaja,2000,4
+Mujer,30,Urbano,Urbano,Trabaja,4000,3.5
+Mujer,51,Urbano,Urbano,Trabaja,8000,3
+Mujer,26,Urbano,Urbano,Trabaja,5000,4
+Mujer,30,Rural,Urbano,Trabaja,7000,15
+Mujer,61,Rural,Urbano,No trabaja,10000,5
+Mujer,21,Urbano,Urbano,No trabaja,NA,3.5
+Mujer,22,Urbano,Urbano,No trabaja,NA,8
+Mujer,24,Urbano,Urbano,Trabaja,6500,3
+Hombre,24,Rural,Urbano,No trabaja,NA,4
+Mujer,20,Rural,Urbano,No trabaja,NA,5
+Mujer,24,Urbano,Urbano,Trabaja,7200,9
+Mujer,16,Urbano,Urbano,No trabaja,NA,7.5
+Hombre,20,Urbano,Urbano,Trabaja,4500,6
+Mujer,14,Urbano,Urbano,No trabaja,NA,5
+Hombre,23,Urbano,Urbano,Trabaja,4200,3
+Mujer,18,Urbano,Urbano,No trabaja,NA,4
+Mujer,26,Rural,Urbano,Trabaja,5000,7
+Mujer,25,Urbano,Urbano,Trabaja,7000,5
+Mujer,14,Urbano,Urbano,No trabaja,NA,3
+Hombre,35,Urbano,Urbano,Trabaja,10,5
+Mujer,22,Urbano,Urbano,No trabaja,13000,3
+Hombre,23,Rural,Rural,Trabaja,4500,6
+Mujer,48,Urbano,Urbano,Trabaja,5500,4
+Mujer,37,Rural,Urbano,Trabaja,4500,8
+Hombre,25,Urbano,Urbano,Trabaja,3000,3
+Hombre,22,Urbano,Urbano,Trabaja,5000,3
+Hombre,19,Urbano,Urbano,Trabaja,3700,7
+Mujer,54,Rural,Urbano,No trabaja,9000,5
+Mujer,34,Rural,Urbano,Trabaja,7000,10
+Mujer,23,Urbano,Urbano,Trabaja,5000,6
+Mujer,32,Urbano,Urbano,Trabaja,6000,3
+Mujer,20,Urbano,Urbano,Trabaja,34000,9
+Hombre,17,Urbano,Urbano,No trabaja,NA,6
+Mujer,29,Urbano,Urbano,Trabaja,8000,4
+Mujer,23,Urbano,Urbano,Trabaja,9080,20
+Hombre,45,Rural,Urbano,Trabaja,5000,5
+Mujer,19,Urbano,Urbano,No trabaja,NA,6
+Hombre,22,Rural,Rural,Trabaja,4500,6
+Hombre,22,Urbano,Urbano,Trabaja,9000,12
+Mujer,28,Urbano,Urbano,Trabaja,6000,7.5
+Mujer,28,Urbano,Urbano,No trabaja,NA,5
+Hombre,20,Urbano,Urbano,No trabaja,NA,2
+Mujer,44,Rural,Urbano,Trabaja,5000,4
+Mujer,44,Rural,Urbano,Trabaja,5000,4
+Hombre,22,Urbano,Urbano,No trabaja,NA,0
+Hombre,21,Urbano,Urbano,Trabaja,9000,8
+Mujer,44,Urbano,Urbano,Trabaja,4800,6

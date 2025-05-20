@@ -1,0 +1,239 @@
+\documentclass{article}
+\usepackage[spanish]{babel}
+\decimalpoint
+\usepackage[margin=1in, lmargin=1.5in, rmargin=1.5in]{geometry}
+\usepackage{float}
+\usepackage{needspace}
+\usepackage[hidelinks]{hyperref}
+\usepackage[onehalfspacing]{setspace}
+
+\title{Proyecto de Métodos Númericos}
+\author{
+  Delgado Lopez, Emily Sofía \\
+  Luna Peña, José Eduardo \\
+  Medina Muñoz, Samara Alejandra \and
+  Murillo Vega, Gustavo \\
+  Yañez Rangel, Ailyn Itzel
+}
+\date{
+    \emph{Universidad Autónoma de Sinaloa,}\\
+    \emph{Facultad de Informática Culiacán}\\
+    \vspace{3mm}
+    18 de Mayo del 2025
+}
+
+\begin{document}
+
+\maketitle
+
+<<include=FALSE>>=
+library(knitr)
+opts_chunk$set(cache = FALSE, echo=FALSE, message=FALSE, results = TRUE)
+library(tidyr)
+library(dplyr)
+library(ggplot2)
+datos_dia <- read.csv('datos2_limpios.csv') |> tibble()
+# transformar de vasos al dia a la semana
+datos <- datos_dia |> mutate(agua = 7*agua)
+@
+
+\needspace{0.5\textheight}
+\section{Gráfica de dispersión de consumo semanal por edad}
+<<grafica1, fig.pos="H", fig.height=3, fig.width=4, fig.cap="Dispersión", fig.align='center'>>=
+agua_edad_dispersion <- datos |>
+  ggplot(aes(x = edad, y = agua)) +
+  geom_point() +
+  geom_vline(xintercept = min(datos$edad), linetype = 'dotted') +
+  geom_hline(yintercept = min(datos$agua), linetype = 'dotted') +
+  scale_x_continuous(
+    breaks = seq(0, max(datos$edad), round(sd(datos$edad))),
+    limits=c(0,NA)) +
+  scale_y_continuous(
+    breaks = seq(0,max(datos$agua), round(sd(datos$agua))),
+    limits=c(0,NA)) +
+  xlab("Edad") +
+  ylab("Vasos de agua por semana")
+agua_edad_dispersion
+@
+
+
+<<>>=
+modelo_edad <- lm(agua ~ edad, datos)
+intercepto <- modelo_edad$coefficients[1]
+pendiente <- modelo_edad$coefficients[2]
+# agua <- datos$agua
+# edad <- datos$edad
+# p <- cov(agua,edad)/sd(agua)/sd(edad)
+# p - cor(agua, edad) < 1e-8
+@
+\needspace{4\baselineskip}
+\section{Regresión de consumo semanal por edad}
+La ecuación de la figura \ref{fig:grafica2} es $Y = \Sexpr{intercepto}
+    \Sexpr{ifelse(pendiente >= 0, "+", "-")}
+    \Sexpr{abs(pendiente)}X$, donde $Y$ representa el agua consumida en vasos por semana, y $X$ la edad. El coeficiente de correlación entre los datos muestrados correspondientes a $X$ y $Y$ es \Sexpr{cor(datos$agua, datos$edad)}.
+% O approximadamente, $Y = \Sexpr{round(intercepto)} \Sexpr{ifelse(pendiente>0,"+","-")} \frac{1}{\Sexpr{abs(round(1/pendiente))}}X$.
+<<grafica2, fig.pos="H", fig.height=3, fig.width=4, fig.cap="Regresión", results='asis', fig.align='center'>>=
+agua_edad_dispersion +
+  stat_smooth(method = 'lm', se = FALSE, fullrange = TRUE)
+@
+
+\needspace{5\baselineskip}
+\section{Pronósticos de consumo por edad}
+En la siguiente tabla se tienen los pronosticos para distintas edades,
+las cuales se encuentran en las mediciones del experimento, por lo tanto también
+se compara con su valor real y se muestra el error.
+\begin{table}[H]
+\centering
+\label{tab:predicciones}
+<<>>=
+modelo_edad <- lm(agua ~ edad, datos)
+predicciones_edad <- tibble(
+    indice = seq(1,50,5),
+    Edad = datos$edad[indice],
+    "Vasos por semana reales" = datos$agua[indice],
+    "Vasos por semana predecidos" = modelo_edad$fitted.values[indice],
+    "Error" = modelo_edad$residuals[indice]) |>
+    select(-indice) |>
+    arrange(Edad)
+
+predicciones_edad |>
+    kable()
+
+@
+\caption{Predicciones}
+\end{table}
+Reducido a este conjunto el coeficiente de correlación de la edad con el
+consumo del agua es \Sexpr{cor(predicciones_edad$Edad, predicciones_edad$`Vasos por semana reales`)}.
+
+\needspace{3\baselineskip}
+\section{Gráfica de dispersión por género}
+<<grafica4, fig.cap="Dispersión por género", fig.height=3, fig.width=4, fig.align='center', fig.pos="H">>=
+datos |> ggplot(aes(x=genero, y=agua)) +
+    geom_point() +
+    xlab("Género") +
+    ylab("Consumo semanal de agua en vasos")
+@
+
+\needspace{2\baselineskip}
+\section{Gráficas de dispersión por edad para cada género}
+%grafica5_mujer, fig.cap="Dispersión de consumo de mujeres", fig.pos="H", fig.align='left', fig.dim=c(2,3)
+<<grafica5, fig.cap="Dispersión por edad y género", fig.pos="H", fig.align="center", fig.dim=c(8,4)>>=
+library(gridExtra) # !!! MASKS `combine` FROM dplyr !!!
+
+hombres <- datos |>
+    filter(genero == "Hombre")
+graf_hombres <- hombres |>
+    ggplot(aes(x = edad, y = agua)) +
+    geom_point() +
+    geom_vline(xintercept = min(hombres$edad), linetype = 'dotted') +
+    geom_hline(yintercept = min(hombres$agua), linetype = 'dotted') +
+    scale_x_continuous(
+        breaks = c(min(hombres$edad), seq(0, max(datos$edad), round(sd(datos$edad)))),
+        limits=c(0,max(datos$edad))) +
+    scale_y_continuous(
+        breaks = seq(0,max(datos$agua), round(sd(datos$agua))),
+        limits=c(0,max(datos$agua))) +
+    xlab("Edad") +
+    ylab("Consumo semanal de agua en vasos") +
+    ggtitle("Hombres")
+
+mujeres <- datos |>
+    filter(genero == "Mujer")
+graf_mujeres <- mujeres |>
+    ggplot(aes(x = edad, y = agua)) +
+    geom_point() +
+    geom_vline(xintercept = min(mujeres$edad), linetype = 'dotted') +
+    geom_hline(yintercept = min(mujeres$agua), linetype = 'dotted') +
+    scale_x_continuous(
+        breaks = seq(0, max(datos$edad), round(sd(datos$edad))),
+        limits=c(0,max(datos$edad))) +
+    scale_y_continuous(
+        breaks = seq(0, max(datos$agua), round(sd(datos$agua))),
+        limits=c(0,max(datos$agua))) +
+    xlab("Edad") +
+    ylab("") +
+    ggtitle("Mujeres")
+
+grid.arrange(graf_hombres, graf_mujeres, ncol = 2)
+@
+
+\section{Gráfica de regresión lineal separada por géneros}
+En el caso de reducir los datos a hombres, tenemos que el coeficiente de correlación
+entre los datos es \Sexpr{cor(hombres$edad, hombres$agua)}, y para las mujeres
+\Sexpr{cor(mujeres$edad, mujeres$agua)}.
+<<grafica6, fig.cap="Modelo lineal por edad y género", fig.pos="H", fig.align="center", fig.dim=c(7,3)>>=
+grid.arrange(
+    graf_hombres + geom_smooth(se = FALSE, method = "lm", fullrange = TRUE),
+    graf_mujeres + geom_smooth(se = FALSE, method = "lm", fullrange = TRUE),
+    ncol = 2
+)
+@
+<<>>=
+modelo_hombres = lm(agua ~ edad, hombres)
+modelo_mujeres = lm(agua ~ edad, mujeres)
+@
+La ecuación del modelo para hombres de la figura \ref{fig:grafica6} es
+$$Y = \Sexpr{coef(modelo_hombres)[1]}
+    \Sexpr{ifelse(coef(modelo_hombres)[2] >= 0, "+", "-")}
+    \Sexpr{abs(coef(modelo_hombres)[2])}X,$$
+y para mujeres es $$Y = \Sexpr{coef(modelo_mujeres)[1]}
+    \Sexpr{ifelse(coef(modelo_mujeres)[2] >= 0, "+", "-")}
+    \Sexpr{abs(coef(modelo_mujeres)[2])}X.$$
+
+\needspace{0.5\textheight}
+\section{Dos ejercicios más: Regresión para menores de 50 años, y mayor o iguales de 50 años}
+<<>>=
+datos_mayores50 <- datos |> filter(edad >= 50)
+datos_menores50 <- datos |> filter(edad < 50)
+menores50 <- lm(agua ~ edad, datos_menores50)
+mayores50 <- lm(agua ~ edad, datos_mayores50)
+@
+La ecuación que corresponde a la grafica izquierda de la figura \ref{fig:grafica_extra} es
+$$Y=\Sexpr{menores50$coefficients[1]}
+    \Sexpr{ifelse(menores50$coefficients[2]>=0, "+", "-")}
+    \Sexpr{menores50$coefficients[2]}X,$$
+con $Y$ correspondiendo al consumo de agua y $X$ a la edad.
+$X$ y $Y$ tienen coeficiente de correlación de Pearson de
+$\Sexpr{cor(datos_menores50$edad, datos_menores50$agua)}$.
+<<grafica_extra, fig.pos="H", fig.height=4, fig.width=8, fig.cap="Dispersión menores de 50 años", fig.align='center'>>=
+grafica_menores50 <- datos_menores50 |>
+    ggplot(aes(x = edad, y = agua)) +
+    geom_point() +
+    geom_vline(xintercept = min(datos_menores50$edad), linetype = 'dotted') +
+    geom_hline(yintercept = min(datos_menores50$agua), linetype = 'dotted') +
+    scale_x_continuous(
+        breaks = seq(0, max(datos$edad), round(sd(datos$edad))),
+        limits=c(0,NA)) +
+    scale_y_continuous(
+        breaks = seq(0,max(datos$agua), round(sd(datos$agua))),
+        limits=c(0,NA)) +
+    xlab("Edad") +
+    ylab("Vasos de agua por semana") +
+    ggtitle("Edad < 50") +
+    stat_smooth(method = 'lm', se = FALSE, fullrange = TRUE)
+
+grafica_mayores50 <- datos_mayores50 |>
+    ggplot(aes(x = edad, y = agua)) +
+    geom_point() +
+    geom_vline(xintercept = min(datos_mayores50$edad), linetype = 'dotted') +
+    geom_hline(yintercept = min(datos_mayores50$agua), linetype = 'dotted') +
+    scale_x_continuous(
+        breaks = seq(0, max(datos$edad), round(sd(datos$edad))),
+        limits=c(0,max(datos$edad))) +
+    scale_y_continuous(
+        breaks = seq(0,max(datos$agua), round(sd(datos$agua))),
+        limits=c(0,max(datos$agua))) +
+    xlab("Edad") +
+    ylab("Vasos de agua por semana") +
+    ggtitle("Edad >= 50") +
+    stat_smooth(method = 'lm', se = FALSE, fullrange = TRUE)
+
+grid.arrange(grafica_menores50, grafica_mayores50, ncol=2)
+@
+Para los de edad mayor o igual a 50 años, la ecuación es
+$$Y=\Sexpr{mayores50$coefficients[1]}
+    \Sexpr{ifelse(mayores50$coefficients[2]>=0, "+", "-")}
+    \Sexpr{mayores50$coefficients[2]}X,$$
+con coeficiente de Pearson de $\Sexpr{cor(datos_mayores50$edad, datos_mayores50$agua)}$
+entre $X$ y $Y$.
+\end{document}
