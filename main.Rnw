@@ -236,4 +236,33 @@ $$Y=\Sexpr{mayores50$coefficients[1]}
     \Sexpr{mayores50$coefficients[2]}X,$$
 con coeficiente de Pearson de $\Sexpr{cor(datos_mayores50$edad, datos_mayores50$agua)}$
 entre $X$ y $Y$.
+
+\section{Parte 2: Lluvia y escurrimiento en un tanque de captación de agua de lluvia}
+Consideremos el modelo sobre la altura $h(t)$ del agua en un tanque, este recibe $R(t)$
+de agua por minuto, y se drena en función de la raíz cuadrada de su altura por una constante
+$C$, y $A$ es el área del tanque. Entonces su ecuación diferencial es
+$$\dot h = \frac{1}{A}\left(R(t) - C\sqrt{\max(h,0)}\right).$$
+\needspace{0.3\paperheight}
+Es claro que $h$ no puede ser menor que 0 en la vida real, pero por
+consideración a las
+imperfecciones en los métodos númericos (en algunos pasos $h$ puede tener valores
+negativos), para evitar una raíz cuadrada de un número negativo, se
+usa el máximo de $h$ y 0 en vez de $h$.
+Dicho de otra forma $h$ negativo se considera 0.
+
+\subsection{Solución númerica}
+Consideramos el caso específico con $A = 2$ y $C = 0.5$, en unidades $m^2$ y
+$m^2\sqrt{m}$ respectivamente, y con $R$ dada por
+$$R(t) = 0.01\sin\left(\frac{\pi}{12}t\right)$$
+en unidades de $m^3/min$.  
+<<>>=
+R <- function(t) {
+    0.01*sin(pi/12*t)
+}
+dh <- function(t, h, A=2, C=0.5) {
+    1/A*(R(t) - sqrt(max(h,0)))
+}
+
+@
+
 \end{document}
