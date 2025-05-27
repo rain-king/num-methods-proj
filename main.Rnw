@@ -241,28 +241,149 @@ entre $X$ y $Y$.
 Consideremos el modelo sobre la altura $h(t)$ del agua en un tanque, este recibe $R(t)$
 de agua por minuto, y se drena en función de la raíz cuadrada de su altura por una constante
 $C$, y $A$ es el área del tanque. Entonces su ecuación diferencial es
-$$\dot h = \frac{1}{A}\left(R(t) - C\sqrt{\max(h,0)}\right).$$
+$$\frac{dh}{dt} = \frac{1}{A}\left(R(t) - C\sqrt{h}\right).$$
 \needspace{0.3\paperheight}
-Es claro que $h$ no puede ser menor que 0 en la vida real, pero por
-consideración a las
-imperfecciones en los métodos númericos (en algunos pasos $h$ puede tener valores
-negativos), para evitar una raíz cuadrada de un número negativo, se
-usa el máximo de $h$ y 0 en vez de $h$.
-Dicho de otra forma $h$ negativo se considera 0.
 
 \subsection{Solución númerica}
 Consideramos el caso específico con $A = 2$ y $C = 0.5$, en unidades $m^2$ y
 $m^2\sqrt{m}$ respectivamente, y con $R$ dada por
 $$R(t) = 0.01\sin\left(\frac{\pi}{12}t\right)$$
-en unidades de $m^3/min$.  
+en unidades de $m^3/min$.
+
+Para evaluar en el lenguaje de programación los métodos de un paso (Euler, Runge-Kutta),
+evitamos valores negativos en cuanto a la función de lluvia por su sentido físico,
+y evitamos valores negativos para la altura del agua en el tanque, en especial
+porque lo usamos dentro de una raíz cuadrada. La ecuación es
+$$\frac{dh}{dt} = 0.5\left(\max(R(t),0) - 0.5\sqrt{\max(h,0)}\right),$$
+para usarse en el método númerico. El método númerico nos puede arrojar
+también valores negativos aproximados de $h$, pero los tomamos como $0$.
+
+Los resultados se encuentran en las siguientes figuras.
+<<>>=
+euler <- function(f, x, y, h) {
+    y + h*f(x,y)
+}
+
+euler_mejorado <- function(f, x, y, h) {
+    y + h*(f(x,y) + f(x+h, euler(f,x,y,h)))/2
+}
+
+rk <- function(f, x, y, h) {
+    k1 <- f(x,y)
+    k2 <- f(x+h/2, y + h*k1)
+    k3 <- f(x+h/2, y + h*k2)
+    k4 <- f(x + h, y + h*k3)
+    y + h/6*(k1 + 2*k2 + 2*k3 + k4)
+}
+@
+
+<<>>=
+library(tidyr)
+library(ggplot2)
+iteraciones <- function(f,x,y,h, x_stop, method) {
+    X <- c(x)
+    Y <- c(y)
+    y_ <- y
+    x_ <- x
+    
+    if (method == "euler") {
+        nombre_metodo <- "Metodo de Euler"
+        stepf <- euler
+    }
+    if (method == "euler_mejorado") {
+        nombre_metodo <- "Metodo de Euler mejorado"
+        stepf <- euler_mejorado
+    }
+    if (method == "rk") {
+        nombre_metodo <- "Metodo Runge-Kutta de orden 4"
+        stepf <- rk
+    }
+        
+    while (x_ < x_stop) {
+        y_ <- stepf(f,x_,y_,h)
+        y_ <- max(y_, 0) # se anula h negativo
+        x_ <- x_ + h
+        Y <- c(Y, y_)
+        X <- c(X, x_)
+    }
+    
+    tibble(x = X/60, y = Y*1000) |> ggplot(aes(x = x, y = y)) + geom_point() +
+    ylab("Milimetros") + xlab("Horas")
+}
+@
+
 <<>>=
 R <- function(t) {
     0.01*sin(pi/12*t)
 }
-dh <- function(t, h, A=2, C=0.5) {
-    1/A*(R(t) - sqrt(max(h,0)))
-}
 
+dh <- function(t, h, A=2, C=0.5) {
+    1/A*(max(R(t),0) - C*sqrt(max(h,0)))
+}
+# graficar <- function(x) x |> ggplot(aes(x = x, y = y*1000)) + geom_point() +
+#     ylab("Milimetros") + xlab("Horas")
 @
+
+<<grafica-p2-1h-euler, fig.cap="Metodo de Euler con paso de 1h", fig.pos="H", fig.align="center", fig.dim=c(8,4)>>=
+iteraciones(dh,0,0, 60, 5*60, "euler")
+@
+
+<<grafica-p2-0.5h-euler, fig.cap="Metodo de Euler con paso de 0.5h", fig.pos="H", fig.align="center", fig.dim=c(8,4)>>=
+iteraciones(dh,0,0, 30, 5*60, "euler")
+@
+
+<<grafica-p2-0.15h-euler, fig.cap="Metodo de Euler con paso de 0.15h", fig.pos="H", fig.align="center", fig.dim=c(8,4)>>=
+iteraciones(dh,0,0, 60*0.15, 5*60, "euler")
+@
+
+<<grafica-p2-1h-euler-mejorado, fig.cap="Metodo de Euler mejorado con paso de 1h", fig.pos="H", fig.align="center", fig.dim=c(8,4)>>=
+iteraciones(dh,0,0, 60, 5*60, "euler_mejorado")
+@
+
+<<grafica-p2-0.5h-euler-mejorado, fig.cap="Metodo de Euler mejorado con paso de 0.5h", fig.pos="H", fig.align="center", fig.dim=c(8,4)>>=
+iteraciones(dh,0,0, 30, 5*60, "euler_mejorado")
+@
+
+<<grafica-p2-0.15h-euler-mejorado, fig.cap="Metodo de Euler mejorado con paso de 0.15h", fig.pos="H", fig.align="center", fig.dim=c(8,4)>>=
+iteraciones(dh,0,0, 60*0.15, 5*60, "euler_mejorado")
+@
+
+<<grafica-p2-1h-rk, fig.cap="Metodo de Runge-Kutta 4 con paso de 1h", fig.pos="H", fig.align="center", fig.dim=c(8,4)>>=
+iteraciones(dh,0,0, 60, 5*60, "rk")
+@
+
+<<grafica-p2-0.5h-rk, fig.cap="Metodo de Runge-Kutta 4 con paso de 0.5h", fig.pos="H", fig.align="center", fig.dim=c(8,4)>>=
+iteraciones(dh,0,0, 30, 5*60, "rk")
+@
+
+<<grafica-p2-0.15h-rk, fig.cap="Metodo de Runge-Kutta 4 con paso de 0.15h", fig.pos="H", fig.align="center", fig.dim=c(8,4)>>=
+iteraciones(dh,0,0, 60*0.15, 5*60, "rk")
+@
+Todos estos intentos de solución tienen un problema, el paso que usamos es mayor que 1, pues
+aunque tomemos 0.15 horas, tenemos que expresarlo en minutos como $\Sexpr{60*0.15}$, mayor que 1.
+Ya que estos métodos aproximan por medio de la derivada, el teorema de Taylor nos dice que
+cada uno de los métodos tienen error proporcional a las potencias $\Delta t$, $\Delta t^2$, y $\Delta t^4$.
+En el caso del paso de 0.15 horas, tendríamos errores alrededor de $9$, $\Sexpr{9^2}$,
+$\Sexpr{9^4}$ en metros, por lo que no podemos depender de estos datos
+respectivamente, y hemos tomado $\Delta t=60$, $\Delta t=30$ y $\Delta t=\Sexpr{60*0.15}$,
+por lo que el error es grande en cualquier metodo e incluso con el paso más pequeño que utilizamos.
+
+En la siguiente figura notamos una solución más precisa tomando un paso de un segundo $\Delta t = 1/60$ con nuestro mejor método, Runge-Kutta.
+<<grafica-p2-1s-rk, fig.cap="Metodo de Runge-Kutta 4 con paso de 1s", fig.pos="H", fig.align="center", fig.dim=c(8,4)>>=
+iteraciones(dh,0,0, 1/60, 5*60, "rk")
+@
+Podemos observar que la solución tiene una naturaleza periodica como se esperaría
+de una función con un seno en su derivada.
+
+Si añadimos una condición inicial
+distinta de 0, es decir si el tanque tuviera un poco de agua al inicio, tenemos 
+en la figura \ref{fig:grafica-p2-1s-rk-inicial} que
+en tan solo unos segundos el agua se vacía y la naturaleza sinusoidal de la solución
+toma dominancia.
+<<grafica-p2-1s-rk-inicial, fig.cap="Metodo de Runge-Kutta 4 con paso de 1s, h(0) = 0.6mm", fig.pos="H", fig.align="center", fig.dim=c(8,4)>>=
+iteraciones(dh,0,0.6/1000, 1/60, 5*60, "rk")
+@
+
+
 
 \end{document}
