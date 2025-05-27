@@ -8,16 +8,29 @@
 \usepackage[onehalfspacing]{setspace}
 
 \title{Proyecto de Métodos Númericos}
+
+% \usepackage{authblk}
+% \author{Emily Sofía Delgado Lopez}
+% \author{José Eduardo Luna Peña}
+% \author{Samara Alejandra Medina Muñoz}
+% \author{Gustavo Murillo Vega}
+% \author{Ailyn Itzel Yañez Rangel}
+% \renewcommand{\Authands}{, y }
+% \renewcommand\Affilfont{\itshape}
+% \affil{Facultad de Informática Culiacán, Universidad Autónoma de Sinaloa}
+
 \author{
-  Delgado Lopez, Emily Sofía \\
-  Luna Peña, José Eduardo \\
-  Medina Muñoz, Samara Alejandra \and
-  Murillo Vega, Gustavo \\
-  Yañez Rangel, Ailyn Itzel
+    Emily Sofía Delgado Lopez \\
+    José Eduardo Luna Peña \\
+    Samara Alejandra Medina Muñoz \and
+    Gustavo Murillo Vega \\
+    Ailyn Itzel Yañez Rangel
 }
+
 \date{
-    \emph{Universidad Autónoma de Sinaloa,}\\
-    \emph{Facultad de Informática Culiacán}\\
+    \vspace{1mm}
+    Facultad de Informática Culiacán, \\
+    Universidad Autónoma de Sinaloa \\
     \vspace{3mm}
     18 de Mayo del 2025
 }
@@ -66,7 +79,7 @@ pendiente <- modelo_edad$coefficients[2]
 # p <- cov(agua,edad)/sd(agua)/sd(edad)
 # p - cor(agua, edad) < 1e-8
 @
-\needspace{4\baselineskip}
+\needspace{0.3\paperheight}
 \section{Regresión de consumo semanal por edad}
 La ecuación de la figura \ref{fig:grafica2} es $Y = \Sexpr{intercepto}
     \Sexpr{ifelse(pendiente >= 0, "+", "-")}
@@ -114,7 +127,7 @@ datos |> ggplot(aes(x=genero, y=agua)) +
     ylab("Consumo semanal de agua en vasos")
 @
 
-\needspace{2\baselineskip}
+\needspace{0.3\paperheight}
 \section{Gráficas de dispersión por edad para cada género}
 %grafica5_mujer, fig.cap="Dispersión de consumo de mujeres", fig.pos="H", fig.align='left', fig.dim=c(2,3)
 <<grafica5, fig.cap="Dispersión por edad y género", fig.pos="H", fig.align="center", fig.dim=c(8,4)>>=
@@ -157,6 +170,7 @@ graf_mujeres <- mujeres |>
 grid.arrange(graf_hombres, graf_mujeres, ncol = 2)
 @
 
+\needspace{0.4\paperheight}
 \section{Gráfica de regresión lineal separada por géneros}
 En el caso de reducir los datos a hombres, tenemos que el coeficiente de correlación
 entre los datos es \Sexpr{cor(hombres$edad, hombres$agua)}, y para las mujeres
@@ -237,31 +251,107 @@ $$Y=\Sexpr{mayores50$coefficients[1]}
 con coeficiente de Pearson de $\Sexpr{cor(datos_mayores50$edad, datos_mayores50$agua)}$
 entre $X$ y $Y$.
 
+\needspace{0.4\paperheight}
 \section{Parte 2: Lluvia y escurrimiento en un tanque de captación de agua de lluvia}
 Consideremos el modelo sobre la altura $h(t)$ del agua en un tanque, este recibe $R(t)$
-de agua por minuto, y se drena en función de la raíz cuadrada de su altura por una constante
-$C$, y $A$ es el área del tanque. Entonces su ecuación diferencial es
-$$\dot h = \frac{1}{A}\left(R(t) - C\sqrt{\max(h,0)}\right).$$
-\needspace{0.3\paperheight}
-Es claro que $h$ no puede ser menor que 0 en la vida real, pero por
-consideración a las
-imperfecciones en los métodos númericos (en algunos pasos $h$ puede tener valores
-negativos), para evitar una raíz cuadrada de un número negativo, se
-usa el máximo de $h$ y 0 en vez de $h$.
-Dicho de otra forma $h$ negativo se considera 0.
+de agua por minuto, y se drena siguiendo la siguiente ecuación diferencial:
+$$\frac{dh}{dt} = \frac{1}{A}\left(R(t) - C\sqrt{h}\right),$$
+donde $C$ es en unidades $m^2\sqrt{m}/min$, y $A$ es el área del tanque en $m^2$.
 
 \subsection{Solución númerica}
 Consideramos el caso específico con $A = 2$ y $C = 0.5$, en unidades $m^2$ y
 $m^2\sqrt{m}$ respectivamente, y con $R$ dada por
 $$R(t) = 0.01\sin\left(\frac{\pi}{12}t\right)$$
-en unidades de $m^3/min$.  
-<<>>=
+en unidades de $m^3/min$. Esta función de lluvia tiene el problema que seno
+puede ser negativo una vez pasado por su periodo de $2\pi$. Por lo que
+se toma solo sus valores no-negativos. De igual manera $h$ en la vida real
+no puede ser negativo pues es la altura a la que un tanque contiene agua.
+Por lo que la ecuación diferencial toma por el momento la forma:
+$$\frac{dh}{dt} = \frac{1}{2}\left(\max\left(R(t),0\right) - 0.5\sqrt{\max(h,0)}\right).$$
+
+Queremos analizar la solución desde $t=0h$ hasta $t=5h$, como se nos pide
+analizar en pasos de hasta $\delta t=1h$, tenemos que escalar para que los
+pasos sean más cercanos a 0. Esto por consideración de que los métodos de un paso tienen
+error global $O(h^n)$, con $n=1$ para Euler, $n=2$ para Euler mejorado, y $n=4$ para
+Runge-Kutta de orden 4. De manera que el paso de una hora nos daría errores
+globales rondando la unidad en terminos de metros, pero para las funciones en la ecuación tienen
+unidades tan pequeñas como 0.01. Por lo que no tendríamos resultados satisfactorios.
+
+Así que escalamos las constantes dependientes del tiempo, para hacer
+el paso lo suficientemente pequeño tomemos las unidades en unidades de días $d$,
+usamos $24\cdot 60min = 24h = 1d$, o $min = \frac{1}{1440}d$ para hacer las conversiones.
+Tenemos que reemplazar la constante $C$, la amplitud de $R(t)$ y $t$ que son las que
+implican tiempo.
+Las unidades de $C$ y $R(t)$ son en $m^2\sqrt{m}/min$, sustituyendo tenemos unidades
+de $1440 m^2\sqrt{m}/d$. Cada $t$ lo cambiamos por $t\frac{1}{1440}$. Así
+la ecuación se vuelve:
+$$\frac{dh}{dt} = \frac{1}{2}\left(1440\max\left(R\left(\frac{1}{1440}t\right),0\right)
+- 1440\cdot 0.5\sqrt{\max(h,0)}\right),$$
+simplificando nos queda
+$$\frac{dh}{dt} = 720\left(\max\left(R\left(\frac{1}{1440}t\right),0\right)
+- 0.5\sqrt{\max(h,0)}\right).$$
+Recordemos que ahora $h$ se evalua en unidades de días.
+
+
+Los métodos numéricos que utilizaremos son los siguientes.
+<<echo = TRUE>>=
+euler <- function(f, x, y, h) {
+    y + h*f(x,y)
+}
+
+euler_mejorado <- function(f, x, y, h) {
+    y + h*(f(x,y) + f(x+h, euler(f,x,y,h)))/2
+}
+
+rk <- function(f, x, y, h) {
+    k1 <- f(x,y)
+    k2 <- f(x+h/2, y + h*k1)
+    k3 <- f(x+h/2, y + h*k2)
+    k4 <- f(x + h, y + h*k3)
+    y + h/6*(k1 + 2*k2 + 2*k3 + k4)
+}
+@
+
+Iteraremos con estas funciones pasandolas a \texttt{iteraciones} como la variable
+\texttt{method}.
+<<echo = TRUE>>=
+library(tidyr)
+library(ggplot2)
+iteraciones <- function(f,x,y,h, x_stop, method) {
+    X <- c(x)
+    Y <- c(y)
+    y_ <- y
+    x_ <- x
+    while (x_ < x_stop) {
+        y_ <- method(f,x_,y_,h)
+        y_ <- max(y_, 0) # se anula h negativo
+        x_ <- x_ + h
+        Y <- c(Y, y_)
+        X <- c(X, x_)
+    }
+    tibble(x = X, y = Y)
+}
+@
+
+El siguiente código ejecuta la solución con pasos de una hora con el método
+de Euler.
+<<echo = TRUE>>=
 R <- function(t) {
     0.01*sin(pi/12*t)
 }
-dh <- function(t, h, A=2, C=0.5) {
-    1/A*(R(t) - sqrt(max(h,0)))
+
+dh <- function(t, h) { 
+    720*(max(R(1/1440*t),0) - 0.5*sqrt(max(h,0)))
 }
+
+sol_1h <- iteraciones(dh,0,0, 1/24, 5/24, euler)
+sol_1h |> ggplot(aes(x = x, y = y)) + geom_point()
+
+sol_0_5h <- iteraciones(dh,0,0,1/24*0.5, 5/24, euler)
+sol_0_5h |> ggplot(aes(x = x, y = y)) + geom_point()
+
+sol_0_15h <- iteraciones(dh,0,0,1/24*0.15, 5/24, euler)
+sol_0_15h |> ggplot(aes(x = x, y = y)) + geom_point()
 
 @
 
